@@ -1,6 +1,6 @@
 /**
  * An error representing an HTTP Error during a network connection.
- * @module HttpError
+ * @private
  */
 export default class HttpError extends Error {
     /**
@@ -10,7 +10,7 @@ export default class HttpError extends Error {
      * @param {Object} headers - The headers whent he request failed
      * @param {*} response - The response the transation failed.  Determined arbitraility
      * by the server. Can be deserialized json.
-     *
+     * @private
     */
     constructor(status, statusText, url, headers, response) {
         if (url) {
@@ -29,6 +29,7 @@ export default class HttpError extends Error {
     /**
      * Serializes to a readable string
      * @return {String} The error represented as a string
+     * @private
      */
     toString() {
         return `HttpError: ${this.status} ${this.message}`;

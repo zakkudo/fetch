@@ -4,28 +4,9 @@ import Url from '@zakkudo/url';
 import {fromJS} from 'immutable';
 
 /**
- * Fetch config
- * @namespace Fetch
- * @typedef Fetch
- * @see {@link https://developer.mozilla.org/docs/Web/API/Fetch_API}
- */
-
-/**
  * Fetch Options
  * @memberof Fetch
  * @typedef {Object} Options
- * @property {boolean} options.method - *GET, POST, PUT, DELETE, etc.
- * @property {boolean} options.mode - no-cors, cors, *same-origin
- * @property {boolean} options.cache - default, no-cache, reload, force-cache, only-if-cached
- * @property {boolean} options.credentials - include, same-origin, *omit
- * @property {boolean} options.headers - "application/json; charset=utf-8".
- * @property {boolean} options.redirect - manual, *follow, error
- * @property {boolean} options.referrer - no-referrer, *client
- * @property {boolean} options.body - JSON.stringify(data), // body data type must match "Content-Type" header
- * @property {boolean} options.params - Query params to be appended to the url. The url must not already have params.
- * @property {boolean} options.transformRequest - Transforms for the request body.
- * When not supplied, it by default json serializes the contents if not a simple string.
- * @property {boolean} options.transformResponse - Transform the response.
  */
 
 /**
@@ -109,9 +90,21 @@ function throwHttpErrors(response) {
 /**
  * A convenience wrapper for native fetch.
  * @param {String} url - The prefered url
- * @param {Fetch.Options} options - Options modifying the network call, mostly analogous to fetch
+ * @param {Object} options - Options modifying the network call, mostly analogous to fetch
+ * @property {String} [options.method='GET'] - GET, POST, PUT, DELETE, etc.
+ * @property {String} [options.mode='same-origin'] - no-cors, cors, same-origin
+ * @property {String} options.cache - default, no-cache, reload, force-cache, only-if-cached
+ * @property {String} [options.credentials='omit'] - include, same-origin, omit
+ * @property {String} options.headers - "application/json; charset=utf-8".
+ * @property {String} [options.redirect='follow'] - manual, follow, error
+ * @property {String} [options.referrer='client'] - no-referrer, client
+ * @property {String|Object} options.body - JSON.stringify(data), // body data type must match "Content-Type" header
+ * @property {String} options.params - Query params to be appended to the url. The url must not already have params.
+ * @property {Function|Array<Function>} options.transformRequest - Transforms for the request body.
+ * When not supplied, it by default json serializes the contents if not a simple string.
+ * @property {Function|Array<Function>} options.transformResponse - Transform the response.
  * @return {Promise} A promise that resolves to the response
- * @module lib/fetch
+ * @module fetch
  */
 export default function _fetch(url, options = {}) {
     return new Promise((resolve, reject) => {
