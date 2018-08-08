@@ -1,7 +1,7 @@
 {
   "name": "@zakkudo/fetch",
   "version": "0.0.1",
-  "description": "Make working with redux fetch enjoyable.",
+  "description": "Make working with fetch enjoyable.",
   "keywords": [
     "fetch",
     "url",
