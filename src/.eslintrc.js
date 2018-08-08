@@ -3,10 +3,12 @@ module.exports = {
         "eslint:recommended"
     ],
     "env": {
-        "jasmine": true
+        "es6": true,
+        "browser": true,
+        "jest/globals": true
     },
     "plugins": [
-        "jasmine"
+        "jest"
     ],
     "parserOptions": {
         "ecmaVersion": 6,

@@ -23,7 +23,8 @@ import {fromJS} from 'immutable';
  * @property {boolean} options.referrer - no-referrer, *client
  * @property {boolean} options.body - JSON.stringify(data), // body data type must match "Content-Type" header
  * @property {boolean} options.params - Query params to be appended to the url. The url must not already have params.
- * @property {boolean} options.transformRequest - Transforms for the request body.  When not supplied, it by default json serializes the contents if not a simple string.
+ * @property {boolean} options.transformRequest - Transforms for the request body.
+ * When not supplied, it by default json serializes the contents if not a simple string.
  * @property {boolean} options.transformResponse - Transform the response.
  */
 

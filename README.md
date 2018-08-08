@@ -1,63 +1,94 @@
-<a name="module_Actions"></a>
+## Modules
 
-## Actions
-Helper class to make working with [Redux](https://redux.js.org/) actions enjoyable. The code is readable,
-with minimal surprises.
+<dl>
+<dt><a href="#module_HttpError">HttpError</a></dt>
+<dd><p>An error representing an HTTP Error during a network connection.</p>
+</dd>
+<dt><a href="#module_lib/fetch">lib/fetch</a> ⇒ <code>Promise</code></dt>
+<dd><p>A convenience wrapper for native fetch.</p>
+</dd>
+</dl>
 
-Why use this?
+## Typedefs
 
-- Consistancy with simplicity
-- Automates creation of the action types by sniffing the action creators
-- It works how you expect it to.  Changing a action type will also update action creator output.
-- Automatically generates the success/failure actions for side effect actions
-  (For libraries like [Redux-Thunk](https://github.com/reduxjs/redux-thunk),
-  [Redux-Saga](https://redux-saga.js.org/), [Redux-Observable](https://redux-observable.js.org/)...)
-- All action type strings are prefixed the namespace on contruction
+<dl>
+<dt><a href="#Fetch">Fetch</a></dt>
+<dd><p>Fetch config</p>
+</dd>
+</dl>
 
-Install with:
+<a name="module_HttpError"></a>
 
-```console
-yarn add @zakkudo/actions
-```
+## HttpError
+An error representing an HTTP Error during a network connection.
 
-**Example**  
-```js
-import Actions from '@zakkudo/actions';
 
-const actions = new Actions({
-    setValue(value) {
-        return {
-            type: 'SET_VALUE',
-            value,
-        };
-    },
-    requestValue(request) {
-        return {
-            type: 'REQUEST_VALUE',
-            request,
-        };
-    }
-}, 'APPLICATION');
+* [HttpError](#module_HttpError)
+    * [module.exports](#exp_module_HttpError--module.exports) ⏏
+        * [new module.exports(status, statusText, url, headers, response)](#new_module_HttpError--module.exports_new)
+        * [.toString()](#module_HttpError--module.exports+toString) ⇒ <code>String</code>
 
-// Automatically generates the action type strings with a namespace
+<a name="exp_module_HttpError--module.exports"></a>
 
-actions.setValue(3); // {type: "@APPLICATION/SET_VALUE", value: 3}
-actions.SET_VALUE // @APPLICATION/SET_VALUE
+### module.exports ⏏
+**Kind**: Exported class  
+<a name="new_module_HttpError--module.exports_new"></a>
 
-actions.requestValue(() => fetch('/data'));
-actions.REQUEST_VALUE // @APPLICATION/REQUEST_VALUE
+#### new module.exports(status, statusText, url, headers, response)
 
-// The below are also automatically generated from requestValue() because
-// it's an async action
+| Param | Type | Description |
+| --- | --- | --- |
+| status | <code>Number</code> | The http eror code |
+| statusText | <code>String</code> | The string representation of the error |
+| url | <code>String</code> | The url that failed |
+| headers | <code>Object</code> | The headers whent he request failed |
+| response | <code>\*</code> | The response the transation failed.  Determined arbitraility by the server. Can be deserialized json. |
 
-actions.valueRequestSucceeded(response);
-actions.VALUE_REQUEST_SUCCEEDED // @APPLICATION/VALUE_REQUEST_SUCCEEDED
+<a name="module_HttpError--module.exports+toString"></a>
 
-actions.valueRequestFailed(response);
-actions.VALUE_REQUEST_FAILED // @APPLICATION/VALUE_REQUEST_FAILED
+#### module.exports.toString() ⇒ <code>String</code>
+Serializes to a readable string
 
-Object.keys(actions) // ['setValue', 'SET_VALUE',
-                     //  'requestValue', 'REQUEST_VALUE',
-                     //  'valueRequestSucceeded', 'VALUE_REQUEST_SUCCEEDED",
-                     //  'valueRequestFailed', 'VALUE_REQUEST_FAILED']
-```
+**Kind**: instance method of [<code>module.exports</code>](#exp_module_HttpError--module.exports)  
+**Returns**: <code>String</code> - The error represented as a string  
+<a name="module_lib/fetch"></a>
+
+## lib/fetch ⇒ <code>Promise</code>
+A convenience wrapper for native fetch.
+
+**Returns**: <code>Promise</code> - A promise that resolves to the response  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| url | <code>String</code> | The prefered url |
+| options | [<code>Options</code>](#Fetch.Options) | Options modifying the network call, mostly analogous to fetch |
+
+<a name="Fetch"></a>
+
+## Fetch
+Fetch config
+
+**Kind**: global typedef  
+**See**: [https://developer.mozilla.org/docs/Web/API/Fetch_API](https://developer.mozilla.org/docs/Web/API/Fetch_API)  
+<a name="Fetch.Options"></a>
+
+### Fetch.Options : <code>Object</code>
+Fetch Options
+
+**Kind**: static typedef of [<code>Fetch</code>](#Fetch)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| options.method | <code>boolean</code> | *GET, POST, PUT, DELETE, etc. |
+| options.mode | <code>boolean</code> | no-cors, cors, *same-origin |
+| options.cache | <code>boolean</code> | default, no-cache, reload, force-cache, only-if-cached |
+| options.credentials | <code>boolean</code> | include, same-origin, *omit |
+| options.headers | <code>boolean</code> | "application/json; charset=utf-8". |
+| options.redirect | <code>boolean</code> | manual, *follow, error |
+| options.referrer | <code>boolean</code> | no-referrer, *client |
+| options.body | <code>boolean</code> | JSON.stringify(data), // body data type must match "Content-Type" header |
+| options.params | <code>boolean</code> | Query params to be appended to the url. The url must not already have params. |
+| options.transformRequest | <code>boolean</code> | Transforms for the request body. When not supplied, it by default json serializes the contents if not a simple string. |
+| options.transformResponse | <code>boolean</code> | Transform the response. |
+
