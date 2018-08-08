@@ -1,15 +1,17 @@
 {
-  "name": "@zakkudo/actions",
-  "version": "0.0.7",
-  "description": "Make working with redux actions enjoyable.",
+  "name": "@zakkudo/fetch",
+  "version": "0.0.1",
+  "description": "Make working with redux fetch enjoyable.",
   "keywords": [
-    "redux"
+    "fetch",
+    "url",
+    "query-string"
   ],
   "main": "build/index.js",
   "files": [
     "build/**/*"
   ],
-  "repository": "github:zakkudo/actions",
+  "repository": "github:zakkudo/fetch",
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@babel/cli": "^7.0.0-beta.56",

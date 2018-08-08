@@ -4,12 +4,6 @@ import Url from '@zakkudo/url';
 import {fromJS} from 'immutable';
 
 /**
- * Fetch Options
- * @memberof Fetch
- * @typedef {Object} Options
- */
-
-/**
  * @private
  */
 function stringifyBody(options) {
@@ -36,9 +30,7 @@ function toFetchOptions(options) {
     let transformRequest = ensureImmutableList(options.get('transformRequest'));
     const blacklisted = new Set(['transformRequest', 'transformResponse', 'params']);
 
-    if (!transformRequest.size) {
-        transformRequest = transformRequest.unshift(stringifyBody);
-    }
+    transformRequest = transformRequest.push(stringifyBody);
 
     return fromJS(transformRequest.reduce(
         (accumulator, fn) => fn(accumulator),
@@ -88,8 +80,26 @@ function throwHttpErrors(response) {
 }
 
 /**
- * A convenience wrapper for native fetch.
- * @param {String} url - The prefered url
+ * Make using [fetch]{@link https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch} enjoyable.
+ *
+ * Why use this?
+ *
+ * - Consistancy with simplicity
+ * - Automatically parses JSON payloads when the content type of the response is `application/json`
+ * - Automatically serializes json in the request body
+ * - Network errors throw an HttpError exception with the exception information for handling
+ * - Interpolates params into url templates, ala `/users/:id/detail` with
+ *   `{params: {id: "joe"}}` becomes `/users/joe/detail`
+ * - Complex params are automatically JSON serialized similar to `@zakkudo/query-string`
+ * - Proper `transformRequest`/`transformResponse` hooks
+ *
+ * Install with:
+ *
+ * ```console
+ * yarn add @zakkudo/fetch
+ * ```
+ *
+ * @param {String} url - The request url
  * @param {Object} options - Options modifying the network call, mostly analogous to fetch
  * @property {String} [options.method='GET'] - GET, POST, PUT, DELETE, etc.
  * @property {String} [options.mode='same-origin'] - no-cors, cors, same-origin
@@ -98,12 +108,76 @@ function throwHttpErrors(response) {
  * @property {String} options.headers - "application/json; charset=utf-8".
  * @property {String} [options.redirect='follow'] - manual, follow, error
  * @property {String} [options.referrer='client'] - no-referrer, client
- * @property {String|Object} options.body - JSON.stringify(data), // body data type must match "Content-Type" header
+ * @property {String|Object} options.body - `JSON.stringify` is automatically run for non-string types
  * @property {String} options.params - Query params to be appended to the url. The url must not already have params.
  * @property {Function|Array<Function>} options.transformRequest - Transforms for the request body.
  * When not supplied, it by default json serializes the contents if not a simple string.
  * @property {Function|Array<Function>} options.transformResponse - Transform the response.
  * @return {Promise} A promise that resolves to the response
+ *
+ * @example <caption>Post to an endpoint using promises</caption>
+ * import fetch from '@zakkudo/fetch';
+ *
+ * //Create a user
+ * fetch('http://example.com/users', {
+ *     method: 'POST'
+ *     body: {
+ *         first_name: 'joe',
+ *         last_name: 'johnson',
+ *     },
+ * }).then((reponse) => {
+ *     console.log(response); // {'id': '1234'}
+ * }.catch((reason) => {
+ *     if (reason.status === 401) {
+ *         return authenticate();
+ *     }
+ *
+ *     console.error(reason);
+ *     throw reason;
+ * });
+ *
+ * @example <caption>Get data from an endpoint</caption>
+ * import fetch from '@zakkudo/fetch';
+ *
+ * //Fetch the created user
+ * fetch('http://example.com/users/:id', {
+ *     params: {
+ *         id: '1234'
+ *     },
+ * }).then((reponse) => {
+ *     console.log(response); // {id: '1234', first_name: 'joe', last_name: 'johnson'}
+ * }.catch((reason) => {
+ *     if (reason.status === 401) {
+ *         return authenticate();
+ *     }
+ *
+ *     console.error(reason);
+ *     throw reason;
+ * });
+ *
+ * @example <caption>Transform requests</caption>
+ * import fetch from '@zakkudo/fetch';
+ *
+ * //Fetch the created user
+ * fetch('http://example.com/users/:id', {
+ *     transformRequest(options) {
+ *         return encodeWithJWT(options);
+ *     },
+ *     transformResponse(response) {
+ *         const {first_name, last_name} = response;
+ *
+ *         response.full_name = `${first_name} ${last_name}`;
+ *
+ *         return response;
+ *     }
+ *     params: {
+ *         id: '1234'
+ *     },
+ * }).then((reponse) => {
+ *     console.log(response); // {id: '1234', first_name: 'joe', last_name: 'johnson', full_name': 'joe johnson'}
+ * });
+ *
+ *
  * @module fetch
  */
 export default function _fetch(url, options = {}) {
