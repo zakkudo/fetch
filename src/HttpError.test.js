@@ -1,6 +1,6 @@
 import HttpError from './HttpError';
 
-describe('lib/errors/HttpError', () => {
+describe('HttpError', () => {
     it('throws the error with the properties attached', () => {
         const error = new HttpError(
             'test status',

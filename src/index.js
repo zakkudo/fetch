@@ -112,11 +112,11 @@ function throwHttpErrors(response) {
  * @return {Promise} A promise that resolves to the response
  * @module lib/fetch
  */
-export default function fetch(url, options = {}) {
+export default function _fetch(url, options = {}) {
     return new Promise((resolve, reject) => {
          const [_url, _options, transformResponse] = applyCustomOptions(url, options);
 
-        window.fetch(String(_url), _options.toJS()).then((response) => {
+        fetch(String(_url), _options.toJS()).then((response) => {
             if (contentTypeIsApplicationJson(_options)) {
                 return response.json().then(throwHttpErrors(response));
             }

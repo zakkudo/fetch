@@ -1,6 +1,6 @@
 /**
  * An error representing an HTTP Error during a network connection.
- * @module lib/errors/HttpError
+ * @module HttpError
  */
 export default class HttpError extends Error {
     /**

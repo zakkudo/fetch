@@ -1,6 +1,6 @@
 import fetch from '.';
 import {fromJS} from 'immutable';
-import MockTestHelper from 'lib/MockTestHelper';
+import MockTestHelper from './MockTestHelper';
 
 let fetchMock;
 
@@ -13,7 +13,7 @@ class Helper extends MockTestHelper {
      */
     static assert(response, asserts) {
         if (asserts.hasOwnProperty('calls')) {
-            expect(fetchMock.calls.all().map((c) => fromJS(c.args).toJS())).toEqual(asserts.calls);
+            expect(global.fetch.mock.calls.map((c) => fromJS(c).toJS())).toEqual(asserts.calls);
         }
 
         if (asserts.hasOwnProperty('response')) {
@@ -24,8 +24,8 @@ class Helper extends MockTestHelper {
 
 describe('lib/fetch', () => {
     beforeEach(() => {
-        fetchMock = spyOn(window, 'fetch');
-        fetchMock.and.returnValue(Promise.resolve({
+        fetchMock = global.fetch = jest.fn()
+        fetchMock.mockReturnValue(Promise.resolve({
             ok: true,
             json: () => Promise.resolve('test json response'),
             text: () => Promise.resolve('test text response'),
@@ -51,7 +51,7 @@ describe('lib/fetch', () => {
     });
 
     it('returns response using text as fallback loader', () => {
-        fetchMock.and.returnValue(Promise.reject(new Error('test error')));
+        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
 
         return fetch('test url').catch((reason) => {
             Helper.assert(reason, {
@@ -130,8 +130,8 @@ describe('lib/fetch', () => {
     });
 
     it('transforms the response', () => {
-        const transformResponse = jasmine.createSpy()
-            .and.returnValue('test transformed response');
+        const transformResponse = jest.fn()
+            .mockReturnValue('test transformed response');
 
         return fetch('test url', {
             transformResponse,
@@ -146,11 +146,11 @@ describe('lib/fetch', () => {
     });
 
     it('chains the transforms to the response', () => {
-        const firstTransformResponse = jasmine.createSpy()
-            .and.returnValue('test first transformed response');
+        const firstTransformResponse = jest.fn()
+            .mockReturnValue('test first transformed response');
 
-        const secondTransformResponse = jasmine.createSpy()
-            .and.returnValue('test second transformed response');
+        const secondTransformResponse = jest.fn()
+            .mockReturnValue('test second transformed response');
 
         return fetch('test url', {
             transformResponse: [
@@ -174,8 +174,8 @@ describe('lib/fetch', () => {
     });
 
     it('transforms the request', () => {
-        const transformRequest = jasmine.createSpy()
-            .and.returnValue({test: 'test transformed request'});
+        const transformRequest = jest.fn()
+            .mockReturnValue({test: 'test transformed request'});
 
         return fetch('test url', {
             transformRequest,
@@ -191,11 +191,11 @@ describe('lib/fetch', () => {
     });
 
     it('chains the transforms to the request', () => {
-        const firstTransformRequest = jasmine.createSpy()
-            .and.returnValue({test: 'test first transformed request'});
+        const firstTransformRequest = jest.fn()
+            .mockReturnValue({test: 'test first transformed request'});
 
-        const secondTransformRequest = jasmine.createSpy()
-            .and.returnValue({test: 'test second transformed request'});
+        const secondTransformRequest = jest.fn()
+            .mockReturnValue({test: 'test second transformed request'});
 
         return fetch('test url', {
             transformRequest: [
@@ -245,7 +245,7 @@ describe('lib/fetch', () => {
     });
 
     it('throws an exception when ther is an http error', () => {
-        fetchMock.and.returnValue(Promise.resolve({
+        fetchMock.mockReturnValue(Promise.resolve({
             ok: false,
             status: 'test status',
             statusText: 'test status text',
