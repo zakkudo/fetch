@@ -1,7 +1,7 @@
 import HttpError from './HttpError';
 
 describe('HttpError', () => {
-    xit('throws the error with the properties attached', () => {
+    it('throws the error with the properties attached', () => {
         const error = new HttpError(
             'test status',
             'test status text',
@@ -10,7 +10,20 @@ describe('HttpError', () => {
             'test response'
         );
 
-        expect(String(error)).toEqual('HttpError: test status test status text <test url>');
+        expect(HttpError.prototype.toString.apply(error)).toEqual(
+            'HttpError: test status test status text <test url>'
+        );
         expect(error.response).toEqual('test response');
+    });
+
+    it('throws the error with the properties attached and no url', () => {
+        const error = new HttpError(
+            'test status',
+            'test status text'
+        );
+
+        expect(HttpError.prototype.toString.apply(error)).toEqual(
+            'HttpError: test status test status text'
+        );
     });
 });

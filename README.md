@@ -3,6 +3,9 @@
 ## fetch ⇒ <code>Promise</code>
 Make using [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch) enjoyable.
 
+[![Build Status](https://travis-ci.org/zakkudo/fetch.svg?branch=master)](https://travis-ci.org/zakkudo/fetch)
+[![Coverage Status](https://coveralls.io/repos/github/zakkudo/fetch/badge.svg?branch=master)](https://coveralls.io/github/zakkudo/fetch?branch=master)
+
 Why use this?
 
 - Consistancy with simplicity

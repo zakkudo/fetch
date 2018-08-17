@@ -21,9 +21,18 @@ export default class HttpError extends Error {
 
         this.status = status;
         this.statusText = statusText;
-        this.url = url;
-        this.headers = headers;
-        this.response = response;
+
+        if (url) {
+            this.url = url;
+        }
+
+        if (headers) {
+            this.headers = headers;
+        }
+
+        if (response) {
+            this.response = response;
+        }
     }
 
     /**

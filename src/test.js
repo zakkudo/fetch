@@ -1,6 +1,7 @@
+import HttpError from './HttpError';
+import MockTestHelper from './MockTestHelper';
 import fetch from '.';
 import {fromJS} from 'immutable';
-import MockTestHelper from './MockTestHelper';
 
 let fetchMock;
 
@@ -244,7 +245,7 @@ describe('lib/fetch', () => {
         });
     });
 
-    xit('throws an exception when ther is an http error', () => {
+    it('throws an exception when ther is an http error', () => {
         fetchMock.mockReturnValue(Promise.resolve({
             ok: false,
             status: 'test status',
@@ -255,7 +256,7 @@ describe('lib/fetch', () => {
         }));
 
         return fetch('test url').catch((reason) => {
-            expect(String(reason)).toEqual(
+            expect(HttpError.prototype.toString.apply(reason)).toEqual(
                 'HttpError: test status test status text <test url>'
             );
 
