@@ -70,7 +70,7 @@ describe('lib/fetch', () => {
         }).then((response) => {
             Helper.assert(response, {
                 response: 'test json response',
-                alls: [['test url', {headers: {'Content-Type': 'application/json'}}]],
+                calls: [['test url', {headers: {'Content-Type': 'application/json'}}]],
             });
         });
     });
@@ -225,7 +225,7 @@ describe('lib/fetch', () => {
             params: {
                 'test': 'param',
             },
-        }).then((response) => {
+        }).then(() => {
             expect(Helper.getCallArguments(fetchMock)).toEqual([[
                 'test url?test=param',
                 {},
@@ -261,6 +261,126 @@ describe('lib/fetch', () => {
             );
 
             expect(reason.response).toEqual('test text response');
+        });
+    });
+
+    it('transforms the error into a different error', () => {
+        const transformError = jest.fn()
+            .mockReturnValue(new Error('test transformed error'));
+
+        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+        return fetch('test url', {
+            transformError,
+        }).then(() => {
+            throw new Error('Not reached');
+        }).catch((reason) => {
+            expect(reason).toEqual(new Error('test transformed error'));
+            expect(fetchMock.mock.calls).toEqual([
+                ['test url', {'transformError': transformError}]
+            ]);
+        });
+    });
+
+    it('transforms the error through multiple functions', () => {
+        const transformError1 = jest.fn()
+            .mockReturnValue(new Error('test transformed error'));
+
+        const transformError2 = jest.fn()
+            .mockReturnValue(new Error('test further transformed error'));
+
+        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+        return fetch('test url', {
+            transformError: [transformError1, transformError2],
+        }).then(() => {
+            throw new Error('Not reached');
+        }).catch((reason) => {
+            expect(reason).toEqual(new Error('test further transformed error'));
+            expect(fetchMock.mock.calls).toEqual([
+                ['test url', {'transformError': [
+                    transformError1,
+                    transformError2
+                ]}]
+            ]);
+        });
+    });
+
+    it('transforms the error into a non-error', () => {
+        const transformError = jest.fn()
+            .mockReturnValue('test caught error');
+
+        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+        return fetch('test url', {
+            transformError,
+        }).then((response) => {
+            expect(response).toEqual('test caught error');
+            expect(fetchMock.mock.calls).toEqual([
+                ['test url', {'transformError': transformError}]
+            ]);
+        });
+    });
+
+    it('transforms the error into a non-error and further transforms are not called', () => {
+        const transformError1 = jest.fn()
+            .mockReturnValue('test caught error');
+
+        const transformError2 = jest.fn()
+            .mockReturnValue(new Error('further transformed error'));
+
+        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+        return fetch('test url', {
+            transformError: [
+                transformError1,
+                transformError2,
+            ],
+        }).then((response) => {
+            expect(response).toEqual('test caught error');
+            expect(fetchMock.mock.calls).toEqual([
+                ['test url', {'transformError': [
+                    transformError1,
+                    transformError2,
+                ]}]
+            ]);
+        });
+    });
+
+    it('handles an exception in the transform function gracefully', () => {
+        const transformError = () => {
+            throw new Error('interupted!');
+        };
+
+        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+        return fetch('test url', {
+            transformError,
+        }).then(() => {
+            throw new Error('Not reached');
+        }).catch((reason) => {
+            expect(reason).toEqual(new Error('interupted!'));
+            expect(fetchMock.mock.calls).toEqual([
+                ['test url', {'transformError': transformError}]
+            ]);
+        });
+    });
+
+    it(`passes in X-AUTH-TOKEN and Authorization to fetch headers`, () => {
+        return fetch('test url', {
+            headers: {
+                'X-AUTH-TOKEN': '1234',
+                'Authorization': 'Basic 1234',
+            },
+        }).then((response) => {
+            Helper.assert(response, {
+                response: 'test text response',
+                calls: [['test url', {
+                    headers: {
+                    'X-AUTH-TOKEN': '1234',
+                    'Authorization': 'Basic 1234',
+                }}]],
+            });
         });
     });
 });

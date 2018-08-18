@@ -45,6 +45,7 @@ yarn add @zakkudo/fetch
 | options.params | <code>String</code> |  | Query params to be appended to the url. The url must not already have params. |
 | options.transformRequest | <code>function</code> \| <code>Array.&lt;function()&gt;</code> |  | Transforms for the request body. When not supplied, it by default json serializes the contents if not a simple string. |
 | options.transformResponse | <code>function</code> \| <code>Array.&lt;function()&gt;</code> |  | Transform the response. |
+| options.transformError | <code>function</code> \| <code>Array.&lt;function()&gt;</code> |  | Transform the error response. Return the error to keep the error state.  Return a non `Error` to recover from the error in the promise chain.  A good place to place a login handler when recieving a `401` from a backend endpoint or redirect to another page. It's preferable to never throw an error here which will break the error transform chain in a non-graceful way. |
 
 **Example** *(Post to an endpoint using promises)*  
 ```js
@@ -103,7 +104,14 @@ fetch('http://example.com/users/:id', {
         response.full_name = `${first_name} ${last_name}`;
 
         return response;
-    }
+    },
+    transformError(reason) {
+        if (reason.status === 401) {
+            window.href = '/login';
+        }
+
+        return reason;
+    },
     params: {
         id: '1234'
     },

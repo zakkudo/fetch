@@ -61,6 +61,7 @@ function applyCustomOptions(url, options) {
         new Url(url, (_options.get('params') || fromJS({})).toJS()),
         toFetchOptions(_options),
         ensureImmutableList(_options.get('transformResponse')),
+        ensureImmutableList(_options.get('transformError')),
     ];
 }
 
@@ -116,6 +117,12 @@ function throwHttpErrors(response) {
  * @property {Function|Array<Function>} options.transformRequest - Transforms for the request body.
  * When not supplied, it by default json serializes the contents if not a simple string.
  * @property {Function|Array<Function>} options.transformResponse - Transform the response.
+ * @property {Function|Array<Function>} options.transformError - Transform the
+ * error response. Return the error to keep the error state.  Return a non
+ * `Error` to recover from the error in the promise chain.  A good place to place a login
+ * handler when recieving a `401` from a backend endpoint or redirect to another page.
+ * It's preferable to never throw an error here which will break the error transform chain in
+ * a non-graceful way.
  * @return {Promise} A promise that resolves to the response
  *
  * @example <caption>Post to an endpoint using promises</caption>
@@ -172,7 +179,14 @@ function throwHttpErrors(response) {
  *         response.full_name = `${first_name} ${last_name}`;
  *
  *         return response;
- *     }
+ *     },
+ *     transformError(reason) {
+ *         if (reason.status === 401) {
+ *             window.href = '/login';
+ *         }
+ *
+ *         return reason;
+ *     },
  *     params: {
  *         id: '1234'
  *     },
@@ -185,7 +199,12 @@ function throwHttpErrors(response) {
  */
 export default function _fetch(url, options = {}) {
     return new Promise((resolve, reject) => {
-         const [_url, _options, transformResponse] = applyCustomOptions(url, options);
+        const [
+            _url,
+            _options,
+            transformResponse,
+            transformError,
+        ] = applyCustomOptions(url, options);
 
         fetch(String(_url), _options.toJS()).then((response) => {
             if (contentTypeIsApplicationJson(_options)) {
@@ -198,6 +217,31 @@ export default function _fetch(url, options = {}) {
                 (accumulator, fn) => fn(accumulator, String(_url), _options.toJS()),
                 response
             );
-        }).then(resolve).catch(reject);
+        }).then(resolve).catch((reason) => {
+            const transformed = transformError.reduce(
+                (accumulator, fn) => {
+                    if (accumulator instanceof Error) {
+                        return fn(accumulator, String(_url), _options.toJS())
+                    }
+
+                    return accumulator;
+                },
+                reason
+            );
+
+            if (transformed instanceof Error) {
+                reject(transformed);
+            } else {
+                resolve(transformed);
+            }
+        }).catch((reason) => {
+            console.warn(
+                `Tranform error threw an exception for ${_url} which will ` +
+                `break the transform chain. This can cause unexpected results.`,
+                reason
+            );
+
+            reject(reason);
+        });
     });
 }
