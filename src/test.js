@@ -5,6 +5,13 @@ import {fromJS} from 'immutable';
 
 let fetchMock;
 
+class NotReachableError extends Error {
+    constructor() {
+        super();
+        this.message = 'This code should not be reachable';
+    }
+}
+
 /**
  * @private
  */
@@ -54,7 +61,9 @@ describe('lib/fetch', () => {
     it('returns response using text as fallback loader', () => {
         fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
 
-        return fetch('test url').catch((reason) => {
+        return fetch('test url').then(() => {
+            throw new NotReachableError();
+        }).catch((reason) => {
             Helper.assert(reason, {
                 response: new Error('test error'),
                 calls: [['test url', {}]],
@@ -238,6 +247,8 @@ describe('lib/fetch', () => {
             params: {
                 'test': 'param',
             },
+        }).then(() => {
+            throw new NotReachableError();
         }).catch((reason) => {
             expect(String(reason)).toEqual(
                 'UrlError: Trying to add duplicate query param when already exists <test url?>'
@@ -255,7 +266,9 @@ describe('lib/fetch', () => {
             text: () => Promise.resolve('test text response'),
         }));
 
-        return fetch('test url').catch((reason) => {
+        return fetch('test url').then(() => {
+            throw new NotReachableError();
+        }).catch((reason) => {
             expect(HttpError.prototype.toString.apply(reason)).toEqual(
                 'HttpError: test status test status text <test url>'
             );
@@ -357,7 +370,7 @@ describe('lib/fetch', () => {
         return fetch('test url', {
             transformError,
         }).then(() => {
-            throw new Error('Not reached');
+            throw new NotReachableError();
         }).catch((reason) => {
             expect(reason).toEqual(new Error('interupted!'));
             expect(fetchMock.mock.calls).toEqual([
