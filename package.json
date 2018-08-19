@@ -29,7 +29,7 @@
     "regenerator-runtime": "^0.12.1"
   },
   "dependencies": {
-    "@zakkudo/url": "^0.0.9",
+    "@zakkudo/url": "^0.0.10",
     "immutable": "^3.8.2"
   },
   "scripts": {
