@@ -198,7 +198,18 @@ function throwHttpErrors(response) {
  *     console.log(response); // {id: '1234', first_name: 'joe', last_name: 'johnson', full_name': 'joe johnson'}
  * });
  *
+ * @example <caption>Handling errors</caption>
+ * import fetch from '@zakkudo/fetch';
+ * import HttpError from '@zakkudo/fetch/HttpError';
  *
+ * fetch('http://example.com/does-not-exist').catch((reason) => {
+ *     if (reason instanceof HttpError) {
+ *         console.log(reason.status); // 404
+ *     }
+ * });
+ *
+ * @throws {UrlError} For incorrectly formatted urls
+ * @throws {QueryStringError} On issues during serialization or construction of the query string
  * @module fetch
  */
 export default function _fetch(url, options = {}) {

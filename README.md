@@ -24,6 +24,11 @@ yarn add @zakkudo/fetch
 ```
 
 **Returns**: <code>Promise</code> - A promise that resolves to the response  
+**Throws**:
+
+- <code>UrlError</code> For incorrectly formatted urls
+- <code>QueryStringError</code> On issues during serialization or construction of the query string
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -112,5 +117,16 @@ fetch('http://example.com/users/:id', {
     },
 }).then((reponse) => {
     console.log(response); // {id: '1234', first_name: 'joe', last_name: 'johnson', full_name': 'joe johnson'}
+});
+```
+**Example** *(Handling errors)*  
+```js
+import fetch from '@zakkudo/fetch';
+import HttpError from '@zakkudo/fetch/HttpError';
+
+fetch('http://example.com/does-not-exist').catch((reason) => {
+    if (reason instanceof HttpError) {
+        console.log(reason.status); // 404
+    }
 });
 ```
