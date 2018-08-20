@@ -139,93 +139,187 @@ describe('lib/fetch', () => {
         });
     });
 
-    it('transforms the response', () => {
-        const transformResponse = jest.fn()
-            .mockReturnValue('test transformed response');
+    describe('transformResponse', () => {
+        it('transforms the response', () => {
+            const transformResponse = jest.fn()
+                .mockReturnValue('test transformed response');
 
-        return fetch('test url', {
-            transformResponse,
-        }).then((response) => {
-            expect(response).toEqual('test transformed response');
-            expect(Helper.getCallArguments(transformResponse)).toEqual([[
-                'test text response',
-                'test url',
-                {},
-            ]]);
+            return fetch('test url', {
+                transformResponse,
+            }).then((response) => {
+                expect(response).toEqual('test transformed response');
+                expect(Helper.getCallArguments(transformResponse)).toEqual([[
+                    'test text response',
+                    'test url',
+                    {},
+                ]]);
+            });
+        });
+
+        it('asynchronously transforms the response', () => {
+            const transformResponse = jest.fn()
+                .mockReturnValue(Promise.resolve('test transformed response'));
+
+            return fetch('test url', {
+                transformResponse,
+            }).then((response) => {
+                expect(response).toEqual('test transformed response');
+                expect(Helper.getCallArguments(transformResponse)).toEqual([[
+                    'test text response',
+                    'test url',
+                    {},
+                ]]);
+            });
+        });
+
+        it('chains the transforms to the response', () => {
+            const firstTransformResponse = jest.fn()
+                .mockReturnValue('test first transformed response');
+
+            const secondTransformResponse = jest.fn()
+                .mockReturnValue('test second transformed response');
+
+            return fetch('test url', {
+                transformResponse: [
+                    firstTransformResponse,
+                    secondTransformResponse,
+                ],
+            }).then((response) => {
+                expect(response).toEqual('test second transformed response');
+                expect(Helper.getCallArguments(firstTransformResponse)).toEqual([[
+                    'test text response',
+                    'test url',
+                    {},
+                ]]);
+
+                expect(Helper.getCallArguments(secondTransformResponse)).toEqual([[
+                    'test first transformed response',
+                    'test url',
+                    {},
+                ]]);
+            });
+        });
+
+        it('chains the asynchronous transforms to the response', () => {
+            const firstTransformResponse = jest.fn()
+                .mockReturnValue(Promise.resolve('test first transformed response'));
+
+            const secondTransformResponse = jest.fn()
+                .mockReturnValue('test second transformed response');
+
+            return fetch('test url', {
+                transformResponse: [
+                    firstTransformResponse,
+                    secondTransformResponse,
+                ],
+            }).then((response) => {
+                expect(response).toEqual('test second transformed response');
+                expect(Helper.getCallArguments(firstTransformResponse)).toEqual([[
+                    'test text response',
+                    'test url',
+                    {},
+                ]]);
+
+                expect(Helper.getCallArguments(secondTransformResponse)).toEqual([[
+                    'test first transformed response',
+                    'test url',
+                    {},
+                ]]);
+            });
         });
     });
 
-    it('chains the transforms to the response', () => {
-        const firstTransformResponse = jest.fn()
-            .mockReturnValue('test first transformed response');
+    describe('transformRequest', () => {
+        it('transforms the request', () => {
+            const transformRequest = jest.fn()
+                .mockReturnValue({test: 'test transformed request'});
 
-        const secondTransformResponse = jest.fn()
-            .mockReturnValue('test second transformed response');
-
-        return fetch('test url', {
-            transformResponse: [
-                firstTransformResponse,
-                secondTransformResponse,
-            ],
-        }).then((response) => {
-            expect(response).toEqual('test second transformed response');
-            expect(Helper.getCallArguments(firstTransformResponse)).toEqual([[
-                'test text response',
-                'test url',
-                {},
-            ]]);
-
-            expect(Helper.getCallArguments(secondTransformResponse)).toEqual([[
-                'test first transformed response',
-                'test url',
-                {},
-            ]]);
+            return fetch('test url', {
+                transformRequest,
+            }).then((request) => {
+                expect(request).toEqual('test text response');
+                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                    'test url',
+                    {'test': 'test transformed request'},
+                ]]);
+                expect(Helper.getCallArguments(transformRequest)).toEqual([[{
+                }]]);
+            });
         });
-    });
 
-    it('transforms the request', () => {
-        const transformRequest = jest.fn()
-            .mockReturnValue({test: 'test transformed request'});
+        it('transforms the request asyncronously', () => {
+            const transformRequest = jest.fn()
+                .mockReturnValue(Promise.resolve({test: 'test transformed request'}));
 
-        return fetch('test url', {
-            transformRequest,
-        }).then((request) => {
-            expect(request).toEqual('test text response');
-            expect(Helper.getCallArguments(fetchMock)).toEqual([[
-                'test url',
-                {'test': 'test transformed request'},
-            ]]);
-            expect(Helper.getCallArguments(transformRequest)).toEqual([[{
-            }]]);
+            return fetch('test url', {
+                transformRequest,
+            }).then((request) => {
+                expect(request).toEqual('test text response');
+                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                    'test url',
+                    {'test': 'test transformed request'},
+                ]]);
+                expect(Helper.getCallArguments(transformRequest)).toEqual([[{
+                }]]);
+            });
         });
-    });
 
-    it('chains the transforms to the request', () => {
-        const firstTransformRequest = jest.fn()
-            .mockReturnValue({test: 'test first transformed request'});
+        it('chains the transforms to the request', () => {
+            const firstTransformRequest = jest.fn()
+                .mockReturnValue({test: 'test first transformed request'});
 
-        const secondTransformRequest = jest.fn()
-            .mockReturnValue({test: 'test second transformed request'});
+            const secondTransformRequest = jest.fn()
+                .mockReturnValue({test: 'test second transformed request'});
 
-        return fetch('test url', {
-            transformRequest: [
-                firstTransformRequest,
-                secondTransformRequest,
-            ],
-        }).then((request) => {
-            expect(request).toEqual('test text response');
-            expect(Helper.getCallArguments(fetchMock)).toEqual([[
-                'test url',
-                {'test': 'test second transformed request'},
-            ]]);
+            return fetch('test url', {
+                transformRequest: [
+                    firstTransformRequest,
+                    secondTransformRequest,
+                ],
+            }).then((request) => {
+                expect(request).toEqual('test text response');
+                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                    'test url',
+                    {'test': 'test second transformed request'},
+                ]]);
 
-            expect(Helper.getCallArguments(firstTransformRequest)).toEqual([[
-                {},
-            ]]);
+                expect(Helper.getCallArguments(firstTransformRequest)).toEqual([[
+                    {},
+                ]]);
 
-            expect(Helper.getCallArguments(secondTransformRequest)).toEqual([[
-                {test: 'test first transformed request'},
-            ]]);
+                expect(Helper.getCallArguments(secondTransformRequest)).toEqual([[
+                    {test: 'test first transformed request'},
+                ]]);
+            });
+        });
+
+        it('chains the asynchronous transforms to the request', () => {
+            const firstTransformRequest = jest.fn()
+                .mockReturnValue(Promise.resolve({test: 'test first transformed request'}));
+
+            const secondTransformRequest = jest.fn()
+                .mockReturnValue({test: 'test second transformed request'});
+
+            return fetch('test url', {
+                transformRequest: [
+                    firstTransformRequest,
+                    secondTransformRequest,
+                ],
+            }).then((request) => {
+                expect(request).toEqual('test text response');
+                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                    'test url',
+                    {'test': 'test second transformed request'},
+                ]]);
+
+                expect(Helper.getCallArguments(firstTransformRequest)).toEqual([[
+                    {},
+                ]]);
+
+                expect(Helper.getCallArguments(secondTransformRequest)).toEqual([[
+                    {test: 'test first transformed request'},
+                ]]);
+            });
         });
     });
 
@@ -256,7 +350,7 @@ describe('lib/fetch', () => {
         });
     });
 
-    it('throws an exception when ther is an http error', () => {
+    it('throws an exception when there is an http error', () => {
         fetchMock.mockReturnValue(Promise.resolve({
             ok: false,
             status: 'test status',
@@ -277,105 +371,168 @@ describe('lib/fetch', () => {
         });
     });
 
-    it('transforms the error into a different error', () => {
-        const transformError = jest.fn()
-            .mockReturnValue(new Error('test transformed error'));
+    describe('transformError', () => {
+        it('transforms the error into a different error', () => {
+            const transformError = jest.fn()
+                .mockReturnValue(new Error('test transformed error'));
 
-        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
 
-        return fetch('test url', {
-            transformError,
-        }).then(() => {
-            throw new Error('Not reached');
-        }).catch((reason) => {
-            expect(reason).toEqual(new Error('test transformed error'));
-            expect(fetchMock.mock.calls).toEqual([
-                ['test url', {'transformError': transformError}]
-            ]);
+            return fetch('test url', {
+                transformError,
+            }).then(() => {
+                throw new Error('Not reached');
+            }).catch((reason) => {
+                expect(reason).toEqual(new Error('test transformed error'));
+                expect(fetchMock.mock.calls).toEqual([
+                    ['test url', {'transformError': transformError}]
+                ]);
+            });
         });
-    });
 
-    it('transforms the error through multiple functions', () => {
-        const transformError1 = jest.fn()
-            .mockReturnValue(new Error('test transformed error'));
+        it('asynchronously transforms the error into a different error', () => {
+            const transformError = jest.fn()
+                .mockReturnValue(Promise.resolve(new Error('test transformed error')));
 
-        const transformError2 = jest.fn()
-            .mockReturnValue(new Error('test further transformed error'));
+            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
 
-        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
-
-        return fetch('test url', {
-            transformError: [transformError1, transformError2],
-        }).then(() => {
-            throw new Error('Not reached');
-        }).catch((reason) => {
-            expect(reason).toEqual(new Error('test further transformed error'));
-            expect(fetchMock.mock.calls).toEqual([
-                ['test url', {'transformError': [
-                    transformError1,
-                    transformError2
-                ]}]
-            ]);
+            return fetch('test url', {
+                transformError,
+            }).then(() => {
+                throw new Error('Not reached');
+            }).catch((reason) => {
+                expect(reason).toEqual(new Error('test transformed error'));
+                expect(fetchMock.mock.calls).toEqual([
+                    ['test url', {'transformError': transformError}]
+                ]);
+            });
         });
-    });
 
-    it('transforms the error into a non-error', () => {
-        const transformError = jest.fn()
-            .mockReturnValue('test caught error');
+        it('transforms the error through multiple functions', () => {
+            const transformError1 = jest.fn()
+                .mockReturnValue(new Error('test transformed error'));
 
-        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            const transformError2 = jest.fn()
+                .mockReturnValue(new Error('test further transformed error'));
 
-        return fetch('test url', {
-            transformError,
-        }).then((response) => {
-            expect(response).toEqual('test caught error');
-            expect(fetchMock.mock.calls).toEqual([
-                ['test url', {'transformError': transformError}]
-            ]);
+            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+            return fetch('test url', {
+                transformError: [transformError1, transformError2],
+            }).then(() => {
+                throw new Error('Not reached');
+            }).catch((reason) => {
+                expect(reason).toEqual(new Error('test further transformed error'));
+                expect(fetchMock.mock.calls).toEqual([
+                    ['test url', {'transformError': [
+                        transformError1,
+                        transformError2
+                    ]}]
+                ]);
+            });
         });
-    });
 
-    it('transforms the error into a non-error and further transforms are not called', () => {
-        const transformError1 = jest.fn()
-            .mockReturnValue('test caught error');
+        it('asynchronously transforms the error through multiple functions', () => {
+            const transformError1 = jest.fn()
+                .mockReturnValue(Promise.resolve(new Error('test transformed error')));
 
-        const transformError2 = jest.fn()
-            .mockReturnValue(new Error('further transformed error'));
+            const transformError2 = jest.fn()
+                .mockReturnValue(new Error('test further transformed error'));
 
-        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
 
-        return fetch('test url', {
-            transformError: [
-                transformError1,
-                transformError2,
-            ],
-        }).then((response) => {
-            expect(response).toEqual('test caught error');
-            expect(fetchMock.mock.calls).toEqual([
-                ['test url', {'transformError': [
+            return fetch('test url', {
+                transformError: [transformError1, transformError2],
+            }).then(() => {
+                throw new Error('Not reached');
+            }).catch((reason) => {
+                expect(reason).toEqual(new Error('test further transformed error'));
+                expect(fetchMock.mock.calls).toEqual([
+                    ['test url', {'transformError': [
+                        transformError1,
+                        transformError2
+                    ]}]
+                ]);
+            });
+        });
+
+        it('transforms the error into a non-error', () => {
+            const transformError = jest.fn()
+                .mockReturnValue('test caught error');
+
+            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+            return fetch('test url', {
+                transformError,
+            }).then((response) => {
+                expect(response).toEqual('test caught error');
+                expect(fetchMock.mock.calls).toEqual([
+                    ['test url', {'transformError': transformError}]
+                ]);
+            });
+        });
+
+        it('transforms the error into a non-error', () => {
+            const transformError = jest.fn()
+                .mockReturnValue('test caught error');
+
+            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+            return fetch('test url', {
+                transformError,
+            }).then((response) => {
+                expect(response).toEqual('test caught error');
+                expect(fetchMock.mock.calls).toEqual([
+                    ['test url', {'transformError': transformError}]
+                ]);
+            });
+        });
+
+        it('transforms the error into a non-error and further transforms are not called', () => {
+            const transformError1 = jest.fn()
+                .mockReturnValue('test caught error');
+
+            const transformError2 = jest.fn()
+                .mockReturnValue(new Error('further transformed error'));
+
+            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+
+            return fetch('test url', {
+                transformError: [
                     transformError1,
                     transformError2,
-                ]}]
-            ]);
+                ],
+            }).then((response) => {
+                expect(response).toEqual('test caught error');
+                expect(fetchMock.mock.calls).toEqual([
+                    ['test url', {'transformError': [
+                        transformError1,
+                        transformError2,
+                    ]}]
+                ]);
+            });
         });
-    });
 
-    it('handles an exception in the transform function gracefully', () => {
-        const transformError = () => {
-            throw new Error('interupted!');
-        };
+        it('handles an exception in the transform function gracefully', () => {
+            const transformError = () => {
+                throw new Error('interupted!');
+            };
 
-        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
 
-        return fetch('test url', {
-            transformError,
-        }).then(() => {
-            throw new NotReachableError();
-        }).catch((reason) => {
-            expect(reason).toEqual(new Error('interupted!'));
-            expect(fetchMock.mock.calls).toEqual([
-                ['test url', {'transformError': transformError}]
-            ]);
+            return fetch('test url', {
+                transformError,
+            }).then(() => {
+                throw new NotReachableError();
+            }).catch((reason) => {
+                expect(reason).toEqual(new Error(
+                    'Tranform error threw an exception for test url which will ' +
+                    'break the transform chain. This can cause unexpected ' +
+                    'results.'));
+                expect(fetchMock.mock.calls).toEqual([
+                    ['test url', {'transformError': transformError}]
+                ]);
+            });
         });
     });
 
@@ -397,3 +554,4 @@ describe('lib/fetch', () => {
         });
     });
 });
+

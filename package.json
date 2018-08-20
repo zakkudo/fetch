@@ -1,11 +1,14 @@
 {
   "name": "@zakkudo/fetch",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Make working with fetch enjoyable.",
   "keywords": [
+    "ajax",
     "fetch",
-    "url",
-    "query-string"
+    "http",
+    "https",
+    "query-string",
+    "url"
   ],
   "main": "index.js",
   "files": [

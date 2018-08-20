@@ -26,16 +26,16 @@ function contentTypeIsApplicationJson(options) {
 /**
  * @private
  */
-function toFetchOptions(options) {
+function toTransformRequestPromise(options) {
     let transformRequest = ensureImmutableList(options.get('transformRequest'));
     const blacklisted = new Set(['transformRequest', 'transformResponse', 'params']);
 
     transformRequest = transformRequest.push(stringifyBody);
 
-    return fromJS(transformRequest.reduce(
-        (accumulator, fn) => fn(accumulator),
-        options.filter((value, key) => !blacklisted.has(key)).toJS()
-    ));
+    return transformRequest.reduce(
+        (accumulator, fn) => accumulator.then((value) => fn(value)),
+        Promise.resolve(options.filter((value, key) => !blacklisted.has(key)).toJS())
+    ).then(fromJS);
 }
 
 /**
@@ -59,7 +59,7 @@ function applyCustomOptions(url, options) {
 
     return [
         new Url(url, (_options.get('params') || fromJS({})).toJS()),
-        toFetchOptions(_options),
+        toTransformRequestPromise(_options),
         ensureImmutableList(_options.get('transformResponse')),
         ensureImmutableList(_options.get('transformError')),
     ];
@@ -117,14 +117,16 @@ function throwHttpErrors(response) {
  * the url. The url must not already have params.  The serialization uses the
  * same rules as used by `@zakkudo/query-string`
  * @param {Function|Array<Function>} [options.transformRequest] - Transforms for the request body.
- * When not supplied, it by default json serializes the contents if not a simple string.
- * @param {Function|Array<Function>} [options.transformResponse] - Transform the response.
+ * When not supplied, it by default json serializes the contents if not a simple string. Also accepts
+ * promises as return values for asynchronous work.
+ * @param {Function|Array<Function>} [options.transformResponse] - Transform the response.  Also accepts
+ * promises as return values for asynchronous work.
  * @param {Function|Array<Function>} [options.transformError] - Transform the
  * error response. Return the error to keep the error state.  Return a non
  * `Error` to recover from the error in the promise chain.  A good place to place a login
  * handler when recieving a `401` from a backend endpoint or redirect to another page.
  * It's preferable to never throw an error here which will break the error transform chain in
- * a non-graceful way.
+ * a non-graceful way. Also accepts promises as return values for asynchronous work.
  * @return {Promise} A promise that resolves to the response
  *
  * @example <caption>Post to an endpoint using promises</caption>
@@ -203,47 +205,55 @@ export default function _fetch(url, options = {}) {
     return new Promise((resolve, reject) => {
         const [
             _url,
-            _options,
+            transformRequestPromise,
             transformResponse,
             transformError,
         ] = applyCustomOptions(url, options);
 
-        fetch(String(_url), _options.toJS()).then((response) => {
-            if (contentTypeIsApplicationJson(_options)) {
-                return response.json().then(throwHttpErrors(response));
-            }
+        transformRequestPromise.then((transformedOptions) => {
+            return fetch(String(_url), transformedOptions.toJS()).then((response) => {
+                if (contentTypeIsApplicationJson(transformedOptions)) {
+                    return response.json().then(throwHttpErrors(response));
+                }
 
-            return response.text().then(throwHttpErrors(response));
-        }).then((response) => {
-            return transformResponse.reduce(
-                (accumulator, fn) => fn(accumulator, String(_url), _options.toJS()),
-                response
-            );
-        }).then(resolve).catch((reason) => {
-            const transformed = transformError.reduce(
-                (accumulator, fn) => {
-                    if (accumulator instanceof Error) {
-                        return fn(accumulator, String(_url), _options.toJS())
+                return response.text().then(throwHttpErrors(response));
+            }).then((response) => {
+                return transformResponse.reduce(
+                    (accumulator, fn) => accumulator.then((value) => {
+                        return fn(value, String(_url), transformedOptions.toJS());
+                    }),
+                    Promise.resolve(response)
+                ).then((response) => {
+                    return response;
+                });
+            }).then(resolve).catch((reason) => {
+                const transformed = transformError.reduce(
+                    (accumulator, fn) => {
+                        return accumulator.then((value) => {
+                            if (value instanceof Error) {
+                                return fn(value, String(_url), transformedOptions.toJS())
+                            }
+
+                            return value;
+                        });
+                    },
+                    Promise.resolve(reason)
+                );
+
+                return transformed.then((response) => {
+                    if (response instanceof Error) {
+                        reject(response);
+                    } else {
+                        resolve(response);
                     }
-
-                    return accumulator;
-                },
-                reason
-            );
-
-            if (transformed instanceof Error) {
-                reject(transformed);
-            } else {
-                resolve(transformed);
-            }
-        }).catch((reason) => {
-            console.warn(
-                `Tranform error threw an exception for ${_url} which will ` +
-                `break the transform chain. This can cause unexpected results.`,
-                reason
-            );
-
-            reject(reason);
+                });
+            }).catch((reason) => {
+                reject(new Error(
+                    `Tranform error threw an exception for ${_url} which will ` +
+                    `break the transform chain. This can cause unexpected results.`,
+                    reason
+                ));
+            });
         });
     });
 }
