@@ -84,6 +84,43 @@ describe('lib/fetch', () => {
         });
     });
 
+    it(`returns empty object when json parse fails but is a json header and status ok`, () => {
+        fetchMock.mockReturnValue(Promise.resolve({
+            ok: true,
+            json: () => Promise.reject(new TypeError('Fetch failed')),
+            text: () => Promise.resolve('test text response'),
+        }));
+
+        return fetch('test url', {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then((response) => {
+            Helper.assert(response, {
+                response: {},
+                calls: [['test url', {headers: {'Content-Type': 'application/json'}}]],
+            });
+        });
+    });
+
+    it(`rethrows error when json parse fails and is a json header and status is not ok`, () => {
+        fetchMock.mockReturnValue(Promise.resolve({
+            ok: false,
+            json: () => Promise.reject(new TypeError('Fetch failed')),
+            text: () => Promise.resolve('test text response'),
+        }));
+
+        return fetch('test url', {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then((response) => {
+            throw new NotReachableError();
+        }).catch((reason) => {
+            expect(reason).toEqual(new TypeError('Fetch failed'));
+        });;
+    });
+
     it(`parses the text when it's a text header`, () => {
         return fetch('test url', {
             headers: {

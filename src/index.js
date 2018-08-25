@@ -224,7 +224,13 @@ export default function _fetch(url, options = {}) {
         transformRequestPromise.then((transformedOptions) => {
             return fetch(String(_url), transformedOptions.toJS()).then((response) => {
                 if (contentTypeIsApplicationJson(transformedOptions)) {
-                    return response.json().then(throwHttpErrors(response));
+                    return response.json().catch((e) => {
+                        if (response.ok) {
+                            return {};
+                        }
+
+                        throw e;
+                    }).then(throwHttpErrors(response));
                 }
 
                 return response.text().then(throwHttpErrors(response));
