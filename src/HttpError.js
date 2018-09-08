@@ -1,16 +1,19 @@
 /**
- * An error representing an HTTP Error during a network connection.
- * @private
+ * @module @zakkudo/fetch/HttpError
  */
-export default class HttpError extends Error {
+
+/**
+ * An error representing an [HTTP error]{@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status} during a network connection.
+ * @extends Error
+ */
+class HttpError extends Error {
     /**
-     * @param {Number} status - The http eror code
+     * @param {Integer} status - The [http error code]{@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status}
      * @param {String} statusText - The string representation of the error
-     * @param {String} url - The url that failed
-     * @param {Object} headers - The headers whent he request failed
-     * @param {*} response - The response the transation failed.  Determined arbitraility
+     * @param {String} [url] - The url that failed
+     * @param {Object} [headers] - The headers when the request failed
+     * @param {*} [response] - The response of the transaction.  Determined arbitraility
      * by the server. Can be deserialized json.
-     * @private
     */
     constructor(status, statusText, url, headers, response) {
         if (url) {
@@ -36,11 +39,11 @@ export default class HttpError extends Error {
     }
 
     /**
-     * Serializes to a readable string
-     * @return {String} The error represented as a string
      * @private
      */
     toString() {
         return `HttpError: ${this.status} ${this.message}`;
     }
 }
+
+export default HttpError;
