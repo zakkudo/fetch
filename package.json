@@ -1,6 +1,6 @@
 {
   "name": "@zakkudo/fetch",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "description": "Make working with native fetch enjoyable.",
   "keywords": [
     "ajax",
