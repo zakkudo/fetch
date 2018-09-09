@@ -3,7 +3,9 @@
  */
 
 /**
- * An error representing an [HTTP error]{@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status} during a network connection.
+ * An error representing an
+ * [HTTP error]{@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status}
+ * during a network connection.
  * @extends Error
  */
 class HttpError extends Error {
@@ -22,18 +24,34 @@ class HttpError extends Error {
             super(`${statusText}`);
         }
 
+        /**
+         * The [http error code]{@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status}
+         */
         this.status = status;
+        /**
+         * The string representation of the error
+         */
         this.statusText = statusText;
 
         if (url) {
+            /**
+             * The url that failed
+             */
             this.url = url;
         }
 
         if (headers) {
+            /**
+             * The headers when the request failed
+             */
             this.headers = headers;
         }
 
         if (response) {
+            /**
+             * The response of the transaction.  Determined arbitraility
+             * by the server. Can be deserialized json.
+             */
             this.response = response;
         }
     }
