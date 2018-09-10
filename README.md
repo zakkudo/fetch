@@ -6,7 +6,7 @@ Make using [native fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch
 [![Coverage Status](https://coveralls.io/repos/github/zakkudo/fetch/badge.svg?branch=master)](https://coveralls.io/github/zakkudo/fetch?branch=master)
 [![Known Vulnerabilities](https://snyk.io/test/github/zakkudo/fetch/badge.svg)](https://snyk.io/test/github/zakkudo/fetch)
 [![Node](https://img.shields.io/node/v/@zakkudo/fetch.svg)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/npm/l/@zakkudo/fetch.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 ## Why use this?
 
@@ -175,11 +175,22 @@ async function get() {
 <a name="module_@zakkudo/fetch/HttpError..HttpError"></a>
 
 ### @zakkudo/fetch/HttpError~HttpError ⇐ <code>Error</code> ⏏
-An error representing an [HTTP error](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) during a network connection.
+An error representing an
+[HTTP error](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
+during a network connection.
 
 **Kind**: Exported class
 
 **Extends**: <code>Error</code>  
+
+* [~HttpError](#module_@zakkudo/fetch/HttpError..HttpError) ⇐ <code>Error</code>
+    * [new HttpError(status, statusText, [url], [headers], [response])](#new_module_@zakkudo/fetch/HttpError..HttpError_new)
+    * [.status](#module_@zakkudo/fetch/HttpError..HttpError+status)
+    * [.statusText](#module_@zakkudo/fetch/HttpError..HttpError+statusText)
+    * [.url](#module_@zakkudo/fetch/HttpError..HttpError+url)
+    * [.headers](#module_@zakkudo/fetch/HttpError..HttpError+headers)
+    * [.response](#module_@zakkudo/fetch/HttpError..HttpError+response)
+
 <a name="new_module_@zakkudo/fetch/HttpError..HttpError_new"></a>
 
 #### new HttpError(status, statusText, [url], [headers], [response])
@@ -192,6 +203,37 @@ An error representing an [HTTP error](https://developer.mozilla.org/en-US/docs/W
 | [headers] | <code>Object</code> | The headers when the request failed |
 | [response] | <code>\*</code> | The response of the transaction.  Determined arbitraility by the server. Can be deserialized json. |
 
+<a name="module_@zakkudo/fetch/HttpError..HttpError+status"></a>
+
+#### httpError.status
+The [http error code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
+
+**Kind**: instance property of [<code>HttpError</code>](#module_@zakkudo/fetch/HttpError..HttpError)  
+<a name="module_@zakkudo/fetch/HttpError..HttpError+statusText"></a>
+
+#### httpError.statusText
+The string representation of the error
+
+**Kind**: instance property of [<code>HttpError</code>](#module_@zakkudo/fetch/HttpError..HttpError)  
+<a name="module_@zakkudo/fetch/HttpError..HttpError+url"></a>
+
+#### httpError.url
+The url that failed
+
+**Kind**: instance property of [<code>HttpError</code>](#module_@zakkudo/fetch/HttpError..HttpError)  
+<a name="module_@zakkudo/fetch/HttpError..HttpError+headers"></a>
+
+#### httpError.headers
+The headers when the request failed
+
+**Kind**: instance property of [<code>HttpError</code>](#module_@zakkudo/fetch/HttpError..HttpError)  
+<a name="module_@zakkudo/fetch/HttpError..HttpError+response"></a>
+
+#### httpError.response
+The response of the transaction.  Determined arbitraility
+by the server. Can be deserialized json.
+
+**Kind**: instance property of [<code>HttpError</code>](#module_@zakkudo/fetch/HttpError..HttpError)  
 <a name="module_@zakkudo/fetch/UrlError"></a>
 
 <a name="module_@zakkudo/fetch/UrlError..UrlError"></a>

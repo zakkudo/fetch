@@ -6,7 +6,7 @@ Make using [native fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch
 [![Coverage Status](https://coveralls.io/repos/github/zakkudo/fetch/badge.svg?branch=master)](https://coveralls.io/github/zakkudo/fetch?branch=master)
 [![Known Vulnerabilities](https://snyk.io/test/github/zakkudo/fetch/badge.svg)](https://snyk.io/test/github/zakkudo/fetch)
 [![Node](https://img.shields.io/node/v/@zakkudo/fetch.svg)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/npm/l/@zakkudo/fetch.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 ## Why use this?
 
