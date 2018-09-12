@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@babel/runtime-corejs2": "^7.0.0",
-    "@zakkudo/url": "^0.0.13",
+    "@zakkudo/url": "^0.0.14",
     "immutable": "^3.8.2"
   },
   "scripts": {
