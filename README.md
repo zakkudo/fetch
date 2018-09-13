@@ -142,21 +142,33 @@ async function get() {
 
 <a name="module_@zakkudo/fetch..fetch"></a>
 
-### @zakkudo/fetch~fetch(url, options) ⇒ <code>Promise</code> ⏏
+### @zakkudo/fetch~fetch(url, [options]) ⇒ <code>Promise</code> ⏏
 
 **Kind**: Exported function
 
-**Returns**: <code>Promise</code> - Resolves to the response of the network transaction  
+**Returns**: <code>Promise</code> - Resolves to the response of the network transaction or rejects with an `HttpError`  
 **Throws**:
 
 - [<code>HttpError</code>](#module_@zakkudo/fetch/HttpError..HttpError) For errors during the network transaction
 - [<code>UrlError</code>](#module_@zakkudo/fetch/UrlError..UrlError) For incorrectly formatted urls
-- [<code>QueryStringError</code>](#module_@zakkudo/fetch/QueryStringError..QueryStringError) On issues during serialization or construction of the query string
+- [<code>QueryStringError</code>](#module_@zakkudo/fetch/QueryStringError..QueryStringError) On issues
+during serialization or construction of the query string
 
-| Param | Type | Default | Description |
+| Param | Type | Description |
+| --- | --- | --- |
+| url | <code>String</code> | The request url |
+| [options] | [<code>Options</code>](#module_@zakkudo/fetch..fetch..Options) | Options modifying the network call, mostly analogous to fetch |
+
+<a name="module_@zakkudo/fetch..fetch..Options"></a>
+
+#### fetch~Options : <code>Object</code>
+Options modifying the network call, mostly analogous to fetch
+
+**Kind**: inner typedef of [<code>fetch</code>](#module_@zakkudo/fetch..fetch)  
+**Properties**
+
+| Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| url | <code>String</code> |  | The request url |
-| options | <code>Object</code> |  | Options modifying the network call, mostly analogous to fetch |
 | [options.method] | <code>String</code> | <code>&#x27;GET&#x27;</code> | GET, POST, PUT, DELETE, etc. |
 | [options.mode] | <code>String</code> | <code>&#x27;same-origin&#x27;</code> | no-cors, cors, same-origin |
 | [options.cache] | <code>String</code> | <code>&#x27;default&#x27;</code> | default, no-cache, reload, force-cache, only-if-cached |
