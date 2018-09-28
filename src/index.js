@@ -32,7 +32,7 @@ function contentTypeIsApplicationJson(options) {
  */
 function toTransformRequestPromise(options) {
     let transformRequest = ensureImmutableList(options.get('transformRequest'));
-    const blacklisted = new Set(['transformRequest', 'transformResponse', 'params']);
+    const blacklisted = new Set(['transformRequest', 'transformResponse']);
 
     transformRequest = transformRequest.push(stringifyBody);
 
@@ -62,7 +62,6 @@ function applyCustomOptions(url, options) {
     const _options = fromJS(options);
 
     return [
-        new Url(url, (_options.get('params') || fromJS({})).toJS()),
         toTransformRequestPromise(_options),
         ensureImmutableList(_options.get('transformResponse')),
         ensureImmutableList(_options.get('transformError')),
@@ -91,7 +90,7 @@ function throwHttpErrors(response) {
  * @property {String} [options.mode='same-origin'] - no-cors, cors, same-origin
  * @property {String} [options.cache='default'] - default, no-cache, reload, force-cache, only-if-cached
  * @property {String} [options.credentials='omit'] - include, same-origin, omit
- * @property {String} options.headers - "application/json; charset=utf-8".
+ * @property {String} [options.headers] - "application/json; charset=utf-8".
  * @property {String} [options.redirect='follow'] - manual, follow, error
  * @property {String} [options.referrer='client'] - no-referrer, client
  * @property {String|Object} [options.body] - `JSON.stringify` is automatically run for non-string types
@@ -101,6 +100,7 @@ function throwHttpErrors(response) {
  * @property {Function|Array<Function>} [options.transformRequest] - Transforms for the request body.
  * When not supplied, it by default json serializes the contents if not a simple string. Also accepts
  * promises as return values for asynchronous work.
+ * @property {Boolean} [options.unsafe] - Disable escaping of params in the url
  * @property {Function|Array<Function>} [options.transformResponse] - Transform the response.  Also accepts
  * promises as return values for asynchronous work.
  * @property {Function|Array<Function>} [options.transformError] - Transform the
@@ -127,14 +127,32 @@ function throwHttpErrors(response) {
 function _fetch(url, options = {}) {
     return new Promise((resolve, reject) => {
         const [
-            _url,
             transformRequestPromise,
             transformResponse,
             transformError,
         ] = applyCustomOptions(url, options);
 
         transformRequestPromise.then((transformedOptions) => {
-            return fetch(String(_url), transformedOptions.toJS()).then((response) => {
+            const params = transformedOptions.toJS().params || {};
+            const unsafe = transformedOptions.get('unsafe');
+            const _options = transformedOptions
+                .delete('params')
+                .delete('unsafe')
+                .toJS();
+            let _url;
+
+            try {
+                _url = new Url(
+                    url,
+                    params,
+                    {unsafe}
+                );
+            } catch (e) {
+                reject(e);
+                return;
+            }
+
+            fetch(String(_url), _options).then((response) => {
                 if (contentTypeIsApplicationJson(transformedOptions)) {
                     return response.json().catch((e) => {
                         if (response.ok) {
@@ -149,7 +167,7 @@ function _fetch(url, options = {}) {
             }).then((response) => {
                 return transformResponse.reduce(
                     (accumulator, fn) => accumulator.then((value) => {
-                        return fn(value, String(_url), transformedOptions.toJS());
+                        return fn(value, String(_url), transformedOptions.delete('params').toJS());
                     }),
                     Promise.resolve(response)
                 ).then((response) => {

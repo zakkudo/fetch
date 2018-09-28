@@ -118,7 +118,7 @@ describe('lib/fetch', () => {
             throw new NotReachableError();
         }).catch((reason) => {
             expect(reason).toEqual(new TypeError('Fetch failed'));
-        });;
+        });
     });
 
     it(`parses the text when it's a text header`, () => {
@@ -280,6 +280,74 @@ describe('lib/fetch', () => {
                     {'test': 'test transformed request'},
                 ]]);
                 expect(Helper.getCallArguments(transformRequest)).toEqual([[{
+                }]]);
+            });
+        });
+
+        it('transforms the request params into a preserialized string', () => {
+            const transformRequest = jest.fn()
+                .mockReturnValue({params: 'testtransformedrequest=1,2,3'});
+
+            return fetch('test url', {
+                transformRequest,
+            }).then((request) => {
+                expect(request).toEqual('test text response');
+                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                    'test url?testtransformedrequest=1%2C2%2C3',
+                    {}
+                ]]);
+                expect(Helper.getCallArguments(transformRequest)).toEqual([[{
+                }]]);
+            });
+        });
+
+        it('transforms the request params into a preserialized string with no escaping', () => {
+            const transformRequest = jest.fn()
+                .mockReturnValue({unsafe: true, params: 'testtransformedrequest=1,2,3'});
+
+            return fetch('test url', {
+                transformRequest
+            }).then((request) => {
+                expect(request).toEqual('test text response');
+                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                    'test url?testtransformedrequest=1,2,3',
+                    {}
+                ]]);
+                expect(Helper.getCallArguments(transformRequest)).toEqual([[{
+                }]]);
+            });
+        });
+
+        it('uses the params with no escaping', () => {
+            return fetch('test url', {
+                params: {
+                    testtransformedrequest: '1,2,3'
+                },
+                unsafe: true
+            }).then((request) => {
+                expect(request).toEqual('test text response');
+                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                    'test url?testtransformedrequest=1,2,3',
+                    {}
+                ]]);
+            });
+        });
+
+        it('overwrites the params transforms the request params into a preserialized string', () => {
+            const transformRequest = jest.fn()
+                .mockReturnValue({params: 'test transformed request=2'});
+
+            return fetch('test url', {
+                'params': {'test request': 'test value'},
+                transformRequest,
+            }).then((request) => {
+                expect(request).toEqual('test text response');
+                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                    'test url?test%20transformed%20request=2',
+                    {},
+                ]]);
+                expect(Helper.getCallArguments(transformRequest)).toEqual([[{
+                    params: {'test request': 'test value'}
                 }]]);
             });
         });
