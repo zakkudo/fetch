@@ -556,18 +556,18 @@
     lodash "^4.17.10"
     to-fast-properties "^2.0.0"
 
-"@zakkudo/query-string@^0.0.14":
-  version "0.0.14"
-  resolved "https://registry.yarnpkg.com/@zakkudo/query-string/-/query-string-0.0.14.tgz#4923d74dbf4366537453886d071ba3e91c63c6b9"
+"@zakkudo/query-string@^0.0.15":
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/@zakkudo/query-string/-/query-string-0.0.15.tgz#716e9125dadc32d3793f6213c7288f085c39314d"
   dependencies:
     "@babel/runtime-corejs2" "^7.0.0"
 
-"@zakkudo/url@^0.0.16":
-  version "0.0.16"
-  resolved "https://registry.yarnpkg.com/@zakkudo/url/-/url-0.0.16.tgz#86ad93f3544bd60dff0ca0311f3a317c38b85774"
+"@zakkudo/url@^0.0.17":
+  version "0.0.17"
+  resolved "https://registry.yarnpkg.com/@zakkudo/url/-/url-0.0.17.tgz#2d0beeef2848add9a9fa469f4c8070800845b6d0"
   dependencies:
     "@babel/runtime-corejs2" "^7.0.0"
-    "@zakkudo/query-string" "^0.0.14"
+    "@zakkudo/query-string" "^0.0.15"
 
 abab@^1.0.4:
   version "1.0.4"
