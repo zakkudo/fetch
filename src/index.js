@@ -3,16 +3,46 @@
  */
 
 import HttpError from './HttpError';
-import Immutable from 'immutable';
+import clone from 'clone';
 import Url from '@zakkudo/url';
-import {fromJS} from 'immutable';
+
+function getContentType(options) {
+    const headers = options.headers || {};
+    const contentType = headers['Content-Type'] || '';
+
+    return contentType.split(';')[0];
+}
 
 /**
  * @private
  */
 function stringifyBody(options) {
-    if (options.hasOwnProperty('body') && typeof options.body !== 'string') {
-        options.body = JSON.stringify(options.body);
+    const contentType = getContentType(options);
+
+     if (options.hasOwnProperty('body') && typeof options.body !== 'string') {
+         const serializable = contentType === 'application/json' || contentType === 'text/plain';
+         const _options = {...options};
+
+         if (serializable || !contentType) {
+             _options.body = JSON.stringify(_options.body);
+         }
+
+         return _options;
+    }
+
+    return options;
+}
+
+function removeContentTypeIfFormData (options) {
+    const contentType = getContentType(options);
+
+    if (contentType === 'multipart/form-data' && options.body instanceof FormData) {
+        const _options = Object.assign({}, options);
+        _options.headers = Object.assign({}, _options.headers);
+
+        delete _options.headers['Content-Type'];
+
+        return _options;
     }
 
     return options;
@@ -21,35 +51,29 @@ function stringifyBody(options) {
 /**
  * @private
  */
-function contentTypeIsApplicationJson(options) {
-    const contentType = options.getIn(['headers', 'Content-Type']) || '';
-
-    return contentType.startsWith('application/json');
-}
-
-/**
- * @private
- */
 function toTransformRequestPromise(options) {
-    let transformRequest = ensureImmutableList(options.get('transformRequest'));
-    const blacklisted = new Set(['transformRequest', 'transformResponse']);
+    const {
+        transformRequest,
+        ...leftover
+    } = options;
 
-    transformRequest = transformRequest.push(stringifyBody);
-
-    return transformRequest.reduce(
+    return ensureList(transformRequest).concat([
+        stringifyBody,
+        removeContentTypeIfFormData,
+    ]).reduce(
         (accumulator, fn) => accumulator.then((value) => fn(value)),
-        Promise.resolve(options.filter((value, key) => !blacklisted.has(key)).toJS())
-    ).then(fromJS);
+        Promise.resolve(leftover)
+    );
 }
 
 /**
  * @private
  */
-function ensureImmutableList(data) {
+function ensureList(data) {
     if (!data) {
-        return fromJS([]);
-    } else if (data instanceof Immutable.List === false) {
-        return fromJS([data]);
+        return [];
+    } else if (!Array.isArray(data)) {
+        return [data];
     }
 
     return data;
@@ -59,19 +83,23 @@ function ensureImmutableList(data) {
  * @private
  */
 function applyCustomOptions(url, options) {
-    const _options = fromJS(options);
+    const {
+        transformResponse,
+        transformError,
+        ...leftover
+    } = clone(options);
 
     return [
-        toTransformRequestPromise(_options),
-        ensureImmutableList(_options.get('transformResponse')),
-        ensureImmutableList(_options.get('transformError')),
+        toTransformRequestPromise(leftover),
+        ensureList(transformResponse),
+        ensureList(transformError),
     ];
 }
 
 /**
  * @private
  */
-function throwHttpErrors(response) {
+function conditionallyThrowHttpError(response) {
     return (payload) => {
         if (!response.ok) {
             const {status, statusText, headers, url} = response;
@@ -133,12 +161,11 @@ function _fetch(url, options = {}) {
         ] = applyCustomOptions(url, options);
 
         transformRequestPromise.then((transformedOptions) => {
-            const params = transformedOptions.toJS().params || {};
-            const unsafe = transformedOptions.get('unsafe');
-            const _options = transformedOptions
-                .delete('params')
-                .delete('unsafe')
-                .toJS();
+            const {
+                params = {},
+                unsafe,
+                ..._options
+            } = transformedOptions;
             let _url;
 
             try {
@@ -153,21 +180,23 @@ function _fetch(url, options = {}) {
             }
 
             fetch(String(_url), _options).then((response) => {
-                if (contentTypeIsApplicationJson(transformedOptions)) {
+                const contentType = response.headers.get('Content-Type') || '';
+
+                if (contentType.split(';')[0] === 'application/json') {
                     return response.json().catch((e) => {
                         if (response.ok) {
-                            return {};
+                            return null;
                         }
 
                         throw e;
-                    }).then(throwHttpErrors(response));
+                    }).then(conditionallyThrowHttpError(response));
                 }
 
-                return response.text().then(throwHttpErrors(response));
+                return response.text().then(conditionallyThrowHttpError(response));
             }).then((response) => {
                 return transformResponse.reduce(
                     (accumulator, fn) => accumulator.then((value) => {
-                        return fn(value, String(_url), transformedOptions.delete('params').toJS());
+                        return fn(value, String(_url), transformedOptions);
                     }),
                     Promise.resolve(response)
                 ).then((response) => {
@@ -178,7 +207,7 @@ function _fetch(url, options = {}) {
                     (accumulator, fn) => {
                         return accumulator.then((value) => {
                             if (value instanceof Error) {
-                                return fn(value, String(_url), transformedOptions.toJS())
+                                return fn(value, String(_url), transformedOptions)
                             }
 
                             return value;

@@ -1,9 +1,8 @@
 import HttpError from './HttpError';
 import MockTestHelper from './MockTestHelper';
 import fetch from '.';
-import {fromJS} from 'immutable';
 
-let fetchMock;
+const mocks = {};
 
 class NotReachableError extends Error {
     constructor() {
@@ -21,7 +20,7 @@ class Helper extends MockTestHelper {
      */
     static assert(response, asserts) {
         if (asserts.hasOwnProperty('calls')) {
-            expect(global.fetch.mock.calls.map((c) => fromJS(c).toJS())).toEqual(asserts.calls);
+            expect(global.fetch.mock.calls).toEqual(asserts.calls);
         }
 
         if (asserts.hasOwnProperty('response')) {
@@ -32,12 +31,24 @@ class Helper extends MockTestHelper {
 
 describe('lib/fetch', () => {
     beforeEach(() => {
-        fetchMock = global.fetch = jest.fn()
-        fetchMock.mockReturnValue(Promise.resolve({
+        mocks.fetch = global.fetch = jest.fn()
+        mocks.fetch.mockReturnValue(Promise.resolve({
             ok: true,
             json: () => Promise.resolve('test json response'),
             text: () => Promise.resolve('test text response'),
+            headers: {
+                get: () => 'plain/text'
+            }
         }));
+
+        mocks.formData = global.FormData = jest.fn();
+    });
+
+    afterEach(() => {
+        Object.entries(mocks).forEach(([key, mock]) => {
+            mock.mockRestore();
+            delete mocks[key];
+        });
     });
 
     it('returns response using text as fallback loader', () => {
@@ -59,7 +70,7 @@ describe('lib/fetch', () => {
     });
 
     it('returns response using text as fallback loader', () => {
-        fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+        mocks.fetch.mockReturnValue(Promise.reject(new Error('test error')));
 
         return fetch('test url').then(() => {
             throw new NotReachableError();
@@ -72,6 +83,15 @@ describe('lib/fetch', () => {
     });
 
     it(`parses the json when it's a json header`, () => {
+        mocks.fetch.mockReturnValue(Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve('test json response'),
+            text: () => Promise.resolve('test text response'),
+            headers: {
+                get: () => 'application/json'
+            }
+        }));
+
         return fetch('test url', {
             headers: {
                 'Content-Type': 'application/json',
@@ -84,11 +104,14 @@ describe('lib/fetch', () => {
         });
     });
 
-    it(`returns empty object when json parse fails but is a json header and status ok`, () => {
-        fetchMock.mockReturnValue(Promise.resolve({
+    it(`returns null when json parse fails but is a json header and status ok`, () => {
+        mocks.fetch.mockReturnValue(Promise.resolve({
             ok: true,
             json: () => Promise.reject(new TypeError('Fetch failed')),
             text: () => Promise.resolve('test text response'),
+            headers: {
+                get: () => 'application/json'
+            }
         }));
 
         return fetch('test url', {
@@ -97,17 +120,20 @@ describe('lib/fetch', () => {
             },
         }).then((response) => {
             Helper.assert(response, {
-                response: {},
+                response: null,
                 calls: [['test url', {headers: {'Content-Type': 'application/json'}}]],
             });
         });
     });
 
     it(`rethrows error when json parse fails and is a json header and status is not ok`, () => {
-        fetchMock.mockReturnValue(Promise.resolve({
+        mocks.fetch.mockReturnValue(Promise.resolve({
             ok: false,
             json: () => Promise.reject(new TypeError('Fetch failed')),
             text: () => Promise.resolve('test text response'),
+            headers: {
+                get: () => 'application/json'
+            }
         }));
 
         return fetch('test url', {
@@ -156,6 +182,15 @@ describe('lib/fetch', () => {
     });
 
     it(`serializes the body for application/json`, () => {
+        mocks.fetch.mockReturnValue(Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve('test json response'),
+            text: () => Promise.resolve('test text response'),
+            headers: {
+                get: () => 'application/json'
+            }
+        }));
+
         return fetch('test url', {
             headers: {
                 'Content-Type': 'application/json',
@@ -275,7 +310,7 @@ describe('lib/fetch', () => {
                 transformRequest,
             }).then((request) => {
                 expect(request).toEqual('test text response');
-                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                     'test url',
                     {'test': 'test transformed request'},
                 ]]);
@@ -292,7 +327,7 @@ describe('lib/fetch', () => {
                 transformRequest,
             }).then((request) => {
                 expect(request).toEqual('test text response');
-                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                     'test url?testtransformedrequest=1%2C2%2C3',
                     {}
                 ]]);
@@ -309,7 +344,7 @@ describe('lib/fetch', () => {
                 transformRequest
             }).then((request) => {
                 expect(request).toEqual('test text response');
-                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                     'test url?testtransformedrequest=1,2,3',
                     {}
                 ]]);
@@ -326,7 +361,7 @@ describe('lib/fetch', () => {
                 unsafe: true
             }).then((request) => {
                 expect(request).toEqual('test text response');
-                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                     'test url?testtransformedrequest=1,2,3',
                     {}
                 ]]);
@@ -342,7 +377,7 @@ describe('lib/fetch', () => {
                 transformRequest,
             }).then((request) => {
                 expect(request).toEqual('test text response');
-                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                     'test url?test%20transformed%20request=2',
                     {},
                 ]]);
@@ -360,7 +395,7 @@ describe('lib/fetch', () => {
                 transformRequest,
             }).then((request) => {
                 expect(request).toEqual('test text response');
-                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                     'test url',
                     {'test': 'test transformed request'},
                 ]]);
@@ -383,7 +418,7 @@ describe('lib/fetch', () => {
                 ],
             }).then((request) => {
                 expect(request).toEqual('test text response');
-                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                     'test url',
                     {'test': 'test second transformed request'},
                 ]]);
@@ -412,7 +447,7 @@ describe('lib/fetch', () => {
                 ],
             }).then((request) => {
                 expect(request).toEqual('test text response');
-                expect(Helper.getCallArguments(fetchMock)).toEqual([[
+                expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                     'test url',
                     {'test': 'test second transformed request'},
                 ]]);
@@ -424,7 +459,7 @@ describe('lib/fetch', () => {
                 expect(Helper.getCallArguments(secondTransformRequest)).toEqual([[
                     {test: 'test first transformed request'},
                 ]]);
-            });
+           });
         });
     });
 
@@ -434,7 +469,7 @@ describe('lib/fetch', () => {
                 'test': 'param',
             },
         }).then(() => {
-            expect(Helper.getCallArguments(fetchMock)).toEqual([[
+            expect(Helper.getCallArguments(mocks.fetch)).toEqual([[
                 'test url?test=param',
                 {},
             ]]);
@@ -456,13 +491,16 @@ describe('lib/fetch', () => {
     });
 
     it('throws an exception when there is an http error', () => {
-        fetchMock.mockReturnValue(Promise.resolve({
+        mocks.fetch.mockReturnValue(Promise.resolve({
             ok: false,
             status: 'test status',
             statusText: 'test status text',
             url: 'test url',
             json: () => Promise.resolve('test json response'),
             text: () => Promise.resolve('test text response'),
+            headers: {
+                get: () => 'plain/text'
+            }
         }));
 
         return fetch('test url').then(() => {
@@ -481,7 +519,7 @@ describe('lib/fetch', () => {
             const transformError = jest.fn()
                 .mockReturnValue(new Error('test transformed error'));
 
-            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            mocks.fetch.mockReturnValue(Promise.reject(new Error('test error')));
 
             return fetch('test url', {
                 transformError,
@@ -489,8 +527,8 @@ describe('lib/fetch', () => {
                 throw new Error('Not reached');
             }).catch((reason) => {
                 expect(reason).toEqual(new Error('test transformed error'));
-                expect(fetchMock.mock.calls).toEqual([
-                    ['test url', {'transformError': transformError}]
+                expect(mocks.fetch.mock.calls).toEqual([
+                    ['test url', {}]
                 ]);
             });
         });
@@ -499,7 +537,7 @@ describe('lib/fetch', () => {
             const transformError = jest.fn()
                 .mockReturnValue(Promise.resolve(new Error('test transformed error')));
 
-            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            mocks.fetch.mockReturnValue(Promise.reject(new Error('test error')));
 
             return fetch('test url', {
                 transformError,
@@ -507,8 +545,8 @@ describe('lib/fetch', () => {
                 throw new Error('Not reached');
             }).catch((reason) => {
                 expect(reason).toEqual(new Error('test transformed error'));
-                expect(fetchMock.mock.calls).toEqual([
-                    ['test url', {'transformError': transformError}]
+                expect(mocks.fetch.mock.calls).toEqual([
+                    ['test url', {}]
                 ]);
             });
         });
@@ -520,7 +558,7 @@ describe('lib/fetch', () => {
             const transformError2 = jest.fn()
                 .mockReturnValue(new Error('test further transformed error'));
 
-            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            mocks.fetch.mockReturnValue(Promise.reject(new Error('test error')));
 
             return fetch('test url', {
                 transformError: [transformError1, transformError2],
@@ -528,11 +566,8 @@ describe('lib/fetch', () => {
                 throw new Error('Not reached');
             }).catch((reason) => {
                 expect(reason).toEqual(new Error('test further transformed error'));
-                expect(fetchMock.mock.calls).toEqual([
-                    ['test url', {'transformError': [
-                        transformError1,
-                        transformError2
-                    ]}]
+                expect(mocks.fetch.mock.calls).toEqual([
+                    ['test url', {}]
                 ]);
             });
         });
@@ -544,7 +579,7 @@ describe('lib/fetch', () => {
             const transformError2 = jest.fn()
                 .mockReturnValue(new Error('test further transformed error'));
 
-            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            mocks.fetch.mockReturnValue(Promise.reject(new Error('test error')));
 
             return fetch('test url', {
                 transformError: [transformError1, transformError2],
@@ -552,11 +587,8 @@ describe('lib/fetch', () => {
                 throw new Error('Not reached');
             }).catch((reason) => {
                 expect(reason).toEqual(new Error('test further transformed error'));
-                expect(fetchMock.mock.calls).toEqual([
-                    ['test url', {'transformError': [
-                        transformError1,
-                        transformError2
-                    ]}]
+                expect(mocks.fetch.mock.calls).toEqual([
+                    ['test url', {}]
                 ]);
             });
         });
@@ -565,30 +597,14 @@ describe('lib/fetch', () => {
             const transformError = jest.fn()
                 .mockReturnValue('test caught error');
 
-            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            mocks.fetch.mockReturnValue(Promise.reject(new Error('test error')));
 
             return fetch('test url', {
                 transformError,
             }).then((response) => {
                 expect(response).toEqual('test caught error');
-                expect(fetchMock.mock.calls).toEqual([
-                    ['test url', {'transformError': transformError}]
-                ]);
-            });
-        });
-
-        it('transforms the error into a non-error', () => {
-            const transformError = jest.fn()
-                .mockReturnValue('test caught error');
-
-            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
-
-            return fetch('test url', {
-                transformError,
-            }).then((response) => {
-                expect(response).toEqual('test caught error');
-                expect(fetchMock.mock.calls).toEqual([
-                    ['test url', {'transformError': transformError}]
+                expect(mocks.fetch.mock.calls).toEqual([
+                    ['test url', {}]
                 ]);
             });
         });
@@ -600,7 +616,7 @@ describe('lib/fetch', () => {
             const transformError2 = jest.fn()
                 .mockReturnValue(new Error('further transformed error'));
 
-            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            mocks.fetch.mockReturnValue(Promise.reject(new Error('test error')));
 
             return fetch('test url', {
                 transformError: [
@@ -609,11 +625,8 @@ describe('lib/fetch', () => {
                 ],
             }).then((response) => {
                 expect(response).toEqual('test caught error');
-                expect(fetchMock.mock.calls).toEqual([
-                    ['test url', {'transformError': [
-                        transformError1,
-                        transformError2,
-                    ]}]
+                expect(mocks.fetch.mock.calls).toEqual([
+                    ['test url', {}]
                 ]);
             });
         });
@@ -623,7 +636,7 @@ describe('lib/fetch', () => {
                 throw new Error('interupted!');
             };
 
-            fetchMock.mockReturnValue(Promise.reject(new Error('test error')));
+            mocks.fetch.mockReturnValue(Promise.reject(new Error('test error')));
 
             return fetch('test url', {
                 transformError,
@@ -634,8 +647,8 @@ describe('lib/fetch', () => {
                     'Tranform error threw an exception for test url which will ' +
                     'break the transform chain. This can cause unexpected ' +
                     'results.'));
-                expect(fetchMock.mock.calls).toEqual([
-                    ['test url', {'transformError': transformError}]
+                expect(mocks.fetch.mock.calls).toEqual([
+                    ['test url', {}]
                 ]);
             });
         });
@@ -655,6 +668,60 @@ describe('lib/fetch', () => {
                     'X-AUTH-TOKEN': '1234',
                     'Authorization': 'Basic 1234',
                 }}]],
+            });
+        });
+    });
+
+    it(`passes through form data with no content type`, () => {
+        const data = new FormData();
+
+        mocks.fetch.mockReturnValue(Promise.resolve({
+            ok: true,
+            status: 'test status',
+            statusText: 'test status text',
+            url: 'test url',
+            json: () => Promise.resolve('test json response'),
+            text: () => Promise.resolve('test text response'),
+            headers: {
+                get: () => 'application/json'
+            }
+        }));
+
+        return fetch('test url', {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            body: data
+        }).then((response) => {
+            Helper.assert(response, {
+                response: 'test json response',
+                calls: [['test url', {
+                    headers: {
+                    },
+                    body: data
+                }]],
+            });
+        });
+    });
+
+    it(`falls back to text when response has no content type`, () => {
+        mocks.fetch.mockReturnValue(Promise.resolve({
+            ok: true,
+            status: 'test status',
+            statusText: 'test status text',
+            url: 'test url',
+            json: () => Promise.resolve('test json response'),
+            text: () => Promise.resolve('test text response'),
+            headers: {
+                get: () => ''
+            }
+        }));
+
+        return fetch('test url', {
+        }).then((response) => {
+            Helper.assert(response, {
+                response: 'test text response',
+                calls: [['test url', {}]],
             });
         });
     });
