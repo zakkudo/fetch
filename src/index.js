@@ -7,108 +7,108 @@ import clone from 'clone';
 import Url from '@zakkudo/url';
 
 function getContentType(options) {
-    const headers = options.headers || {};
-    const contentType = headers['Content-Type'] || '';
+  const headers = options.headers || {};
+  const contentType = headers['Content-Type'] || '';
 
-    return contentType.split(';')[0];
+  return contentType.split(';')[0];
 }
 
 /**
  * @private
  */
 function stringifyBody(options) {
-    const contentType = getContentType(options);
+  const contentType = getContentType(options);
 
-     if (options.hasOwnProperty('body') && typeof options.body !== 'string') {
-         const serializable = contentType === 'application/json' || contentType === 'text/plain';
-         const _options = {...options};
+  if (options.hasOwnProperty('body') && typeof options.body !== 'string') {
+    const serializable = contentType === 'application/json' || contentType === 'text/plain';
+    const _options = {...options};
 
-         if (serializable || !contentType) {
-             _options.body = JSON.stringify(_options.body);
-         }
-
-         return _options;
+    if (serializable || !contentType) {
+      _options.body = JSON.stringify(_options.body);
     }
 
-    return options;
+    return _options;
+  }
+
+  return options;
 }
 
 function removeContentTypeIfFormData (options) {
-    const contentType = getContentType(options);
+  const contentType = getContentType(options);
 
-    if (contentType === 'multipart/form-data' && options.body instanceof FormData) {
-        const _options = Object.assign({}, options);
-        _options.headers = Object.assign({}, _options.headers);
+  if (contentType === 'multipart/form-data' && options.body instanceof FormData) {
+    const _options = Object.assign({}, options);
+    _options.headers = Object.assign({}, _options.headers);
 
-        delete _options.headers['Content-Type'];
+    delete _options.headers['Content-Type'];
 
-        return _options;
-    }
+    return _options;
+  }
 
-    return options;
+  return options;
 }
 
 /**
  * @private
  */
 function toTransformRequestPromise(options) {
-    const {
-        transformRequest,
-        ...leftover
-    } = options;
+  const {
+    transformRequest,
+    ...leftover
+  } = options;
 
-    return ensureList(transformRequest).concat([
-        stringifyBody,
-        removeContentTypeIfFormData,
-    ]).reduce(
-        (accumulator, fn) => accumulator.then((value) => fn(value)),
-        Promise.resolve(leftover)
-    );
+  return ensureList(transformRequest).concat([
+    stringifyBody,
+    removeContentTypeIfFormData,
+  ]).reduce(
+    (accumulator, fn) => accumulator.then((value) => fn(value)),
+    Promise.resolve(leftover)
+  );
 }
 
 /**
  * @private
  */
 function ensureList(data) {
-    if (!data) {
-        return [];
-    } else if (!Array.isArray(data)) {
-        return [data];
-    }
+  if (!data) {
+    return [];
+  } else if (!Array.isArray(data)) {
+    return [data];
+  }
 
-    return data;
+  return data;
 }
 
 /**
  * @private
  */
 function applyCustomOptions(url, options) {
-    const {
-        transformResponse,
-        transformError,
-        ...leftover
-    } = clone(options);
+  const {
+    transformResponse,
+    transformError,
+    ...leftover
+  } = clone(options);
 
-    return [
-        toTransformRequestPromise(leftover),
-        ensureList(transformResponse),
-        ensureList(transformError),
-    ];
+  return [
+    toTransformRequestPromise(leftover),
+    ensureList(transformResponse),
+    ensureList(transformError),
+  ];
 }
 
 /**
  * @private
  */
 function conditionallyThrowHttpError(response) {
-    return (payload) => {
-        if (!response.ok) {
-            const {status, statusText, headers, url} = response;
+  return (payload) => {
+    if (!response.ok) {
+      const {status, statusText, headers, url} = response;
 
-            throw new HttpError(status, statusText, url, headers, payload);
-        }
+      throw new HttpError(status, statusText, url, headers, payload);
+    }
 
-        return payload;
-    };
+    return payload;
+  };
 }
 
 /**
@@ -153,85 +153,85 @@ function conditionallyThrowHttpError(response) {
  * during serialization or construction of the query string
  */
 function _fetch(url, options = {}) {
-    return new Promise((resolve, reject) => {
-        const [
-            transformRequestPromise,
-            transformResponse,
-            transformError,
-        ] = applyCustomOptions(url, options);
+  return new Promise((resolve, reject) => {
+    const [
+      transformRequestPromise,
+      transformResponse,
+      transformError,
+    ] = applyCustomOptions(url, options);
 
-        transformRequestPromise.then((transformedOptions) => {
-            const {
-                params = {},
-                unsafe,
-                ..._options
-            } = transformedOptions;
-            let _url;
+    transformRequestPromise.then((transformedOptions) => {
+      const {
+        params = {},
+        unsafe,
+        ..._options
+      } = transformedOptions;
+      let _url;
 
-            try {
-                _url = new Url(
-                    url,
-                    params,
-                    {unsafe}
-                );
-            } catch (e) {
-                reject(e);
-                return;
+      try {
+        _url = new Url(
+          url,
+          params,
+          {unsafe}
+        );
+      } catch (e) {
+        reject(e);
+        return;
+      }
+
+      fetch(String(_url), _options).then((response) => {
+        const contentType = response.headers.get('Content-Type') || '';
+
+        if (contentType.split(';')[0] === 'application/json') {
+          return response.json().catch((e) => {
+            if (response.ok) {
+              return null;
             }
 
-            fetch(String(_url), _options).then((response) => {
-                const contentType = response.headers.get('Content-Type') || '';
+            throw e;
+          }).then(conditionallyThrowHttpError(response));
+        }
 
-                if (contentType.split(';')[0] === 'application/json') {
-                    return response.json().catch((e) => {
-                        if (response.ok) {
-                            return null;
-                        }
-
-                        throw e;
-                    }).then(conditionallyThrowHttpError(response));
-                }
-
-                return response.text().then(conditionallyThrowHttpError(response));
-            }).then((response) => {
-                return transformResponse.reduce(
-                    (accumulator, fn) => accumulator.then((value) => {
-                        return fn(value, String(_url), transformedOptions);
-                    }),
-                    Promise.resolve(response)
-                ).then((response) => {
-                    return response;
-                });
-            }).then(resolve).catch((reason) => {
-                const transformed = transformError.reduce(
-                    (accumulator, fn) => {
-                        return accumulator.then((value) => {
-                            if (value instanceof Error) {
-                                return fn(value, String(_url), transformedOptions)
-                            }
-
-                            return value;
-                        });
-                    },
-                    Promise.resolve(reason)
-                );
-
-                return transformed.then((response) => {
-                    if (response instanceof Error) {
-                        reject(response);
-                    } else {
-                        resolve(response);
-                    }
-                });
-            }).catch((reason) => {
-                reject(new Error(
-                    `Tranform error threw an exception for ${_url} which will ` +
-                    `break the transform chain. This can cause unexpected results.`,
-                    reason
-                ));
-            });
+        return response.text().then(conditionallyThrowHttpError(response));
+      }).then((response) => {
+        return transformResponse.reduce(
+          (accumulator, fn) => accumulator.then((value) => {
+            return fn(value, String(_url), transformedOptions);
+          }),
+          Promise.resolve(response)
+        ).then((response) => {
+          return response;
         });
+      }).then(resolve).catch((reason) => {
+        const transformed = transformError.reduce(
+          (accumulator, fn) => {
+            return accumulator.then((value) => {
+              if (value instanceof Error) {
+                return fn(value, String(_url), transformedOptions)
+              }
+
+              return value;
+            });
+          },
+          Promise.resolve(reason)
+        );
+
+        return transformed.then((response) => {
+          if (response instanceof Error) {
+            reject(response);
+          } else {
+            resolve(response);
+          }
+        });
+      }).catch((reason) => {
+        reject(new Error(
+          `Tranform error threw an exception for ${_url} which will ` +
+          `break the transform chain. This can cause unexpected results.`,
+          reason
+        ));
+      });
     });
+  });
 }
 
 export default _fetch;
